@@ -53,8 +53,7 @@ export default function Home() {
     }
     main();
   }, [])
-
-
+  const [text, setText] = useState("CREATE SECURE ROOM")
   const { mutate: createRoom } = useMutation({
     mutationFn: async () => {
       const res = await client.room.create.post()
@@ -63,6 +62,12 @@ export default function Home() {
       }
     }
   })
+  const createRoomHandler = () => {
+    setText("CREATING...")
+    createRoom();
+    setText("CREATE SECURE ROOM")
+
+  }
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-4">
       <div className="w-full max-w-md space-y-8">
@@ -87,8 +92,8 @@ export default function Home() {
                 </div>
               </div>
             </div>
-            <button onClick={() => createRoom()} className="w-full bg-zinc-100 text-black p-3 text-sm font-bold hover:bg-zinc-50 hover:text-black transition-colors mt-2 cursor-pointer disabled:opacity-50">
-              CREATE SECURE ROOM
+            <button onClick={createRoomHandler} className="w-full bg-zinc-100 text-black p-3 text-sm font-bold hover:bg-zinc-50 hover:text-black transition-colors mt-2 cursor-pointer disabled:opacity-50">
+              {text}
             </button>
           </div>
         </div>
