@@ -2,7 +2,7 @@ import { redis } from '@/lib/redis';
 import { Elysia, t } from 'elysia'
 import { nanoid } from 'nanoid'
 
-const ROOM_TTL = 60 * 5;
+const ROOM_TTL = 60 * 10;
 const rooms = new Elysia({ prefix: '/room' })
     .post("/create", async () => {
         const roomId = nanoid();

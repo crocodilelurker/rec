@@ -1,8 +1,8 @@
 'use client'
 
-import { Bomb } from "lucide-react";
+import { Bomb, Send } from "lucide-react";
 import { useParams } from "next/navigation"
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 const formatTime = (time: number) => {
     const minutes = Math.floor(time / 60);
@@ -12,7 +12,7 @@ const formatTime = (time: number) => {
 };
 
 export default function Room() {
-
+    const [input,setInput] = useState<string>("")
     const [copyStatus, setcopyStatus] = useState<string>("COPY")
     const copyLink = () => {
         const url = window.location.href;
@@ -22,6 +22,7 @@ export default function Room() {
             setcopyStatus("COPY")
         }, 2000)
     }
+    const inputRef = useRef<HTMLInputElement | undefined>(null)
 
     const [time, setTime] = useState<number | null>(122);
     const params = useParams()
@@ -54,6 +55,31 @@ export default function Room() {
                     DESTROY ROOM
                 </button>
             </header>
+            <div className="flex-1 overflow-y-auto space-y-4 scrollbar-thin">
+
+            </div>
+            <div className="border-t border-zinc-800/50 p-4 bg-zinc-900/50 backdrop-blur-md">
+            <div className="flex gap-4">
+                <div className="flex-1 relative-group">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-green-500 animate-pulse pl-1">{'>'}</span>
+                    <input  autoFocus 
+                    value= {input}
+                    onKeyDown={(e) => {
+                        if(e.key=="Enter")
+                        {
+                            //Send Backend Message
+                            inputRef.current?.focus();
+                        }
+                    }}
+                    placeholder="Type message ..."
+                    onChange={(e) => setInput(e.target.value)}
+                    type="text" 
+                    className="w-full bg-black border border-zinc-800 focus:border-zinc-700 focus-outline-none transition-colors text-zinc-100 
+                    placeholder:text-zinc-700 pl-4 py-8 pr-4 text-sm rounded"></input>
+                </div>
+                <button className="bg-zinc-800 text-zinc-400 px-6 text-md font-bold hover: text-zinc-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer rounded-lg flex items-center gap-2"> SEND<Send className="h-4 w-4"/></button>
+            </div>
+            </div>
         </main>
     )
 }
