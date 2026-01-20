@@ -5,7 +5,7 @@ NextJS
 Upstash Redis
 TailwindCSS
 Bun
-WebSockets
+upstash realtime
 TanStack Query
 TanStack React
 
