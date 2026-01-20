@@ -39,7 +39,7 @@ export default function Room() {
         }
     })
     useEffect(() => {
-        if (ttlData?.ttl !== undefined) {
+        if (ttlData && 'ttl' in ttlData) {
             setTime(ttlData.ttl)
         }
     }, [ttlData])
@@ -135,11 +135,11 @@ export default function Room() {
                 </button>
             </header>
             <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin">
-                {messages?.messages.length === 0 && (<div className="flex items-center justify-center h-full">
+                {messages && 'messages' in messages && messages.messages.length === 0 && (<div className="flex items-center justify-center h-full">
                     <p className="text-zinc-600">No messages yet</p>
                 </div>)}
 
-                {messages?.messages.map((m) => (
+                {messages && 'messages' in messages && messages.messages.map((m) => (
                     <div key={m.id} className="flex flex-col items-start">
                         <div className="max-w-[80%] group">
                             <div className="flex items-baseline gap-3 mb-1">

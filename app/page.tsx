@@ -21,9 +21,7 @@ function Home() {
 
 
 
-  if (wasDestroyed) {
-    alert("Room was destroyed")
-  }
+  // Banner already shows when wasDestroyed is true - no action needed
   const { mutate: createRoom } = useMutation({
     mutationFn: async () => {
       const res = await client.room.create.post()

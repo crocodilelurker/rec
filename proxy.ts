@@ -9,17 +9,15 @@ export default async function middleware(req: NextRequest) {
     if (!roomId) {
         return NextResponse.redirect(new URL("/", req.url))
     }
-    const meta = await redis.hgetall<{ connected: [], createdAt: number }>(`meta:${roomId}`)
+    const meta = await redis.hgetall<{ connected: string[], createdAt: number }>(`meta:${roomId}`)
     if (!meta) {
         return NextResponse.redirect(new URL("/?error=room-not-found", req.url))
     }
     const existingToken = req.cookies.get("x-auth-token")?.value
-    if(existingToken && meta.connected.includes(existingToken))
-    {
+    if (existingToken && meta.connected.includes(existingToken)) {
         return NextResponse.next();
     }
-    if(meta.connected.length >= 2)
-    {
+    if (meta.connected.length >= 2) {
         return NextResponse.redirect(new URL("/?error=room-full", req.url))
     }
     const response = NextResponse.next();
