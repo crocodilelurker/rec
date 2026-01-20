@@ -4,55 +4,11 @@ import { useMutation } from "@tanstack/react-query";
 import { nanoid } from "nanoid";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-const ANIMALS = [
-  "tiger",
-  "wolf",
-  "eagle",
-  "panda",
-  "fox",
-  "lion",
-  "otter",
-  "hawk",
-  "bear",
-  "dolphin"
-];
-const ADJECTIVES = [
-  "brave",
-  "clever",
-  "swift",
-  "fierce",
-  "lazy",
-  "happy",
-  "wild",
-  "sneaky",
-  "mighty",
-  "calm"
-];
+import { useUsername } from "@/hooks/use-username";
 
-const STORAGE_KEY = "chat_username"
-const generateUsername = () => {
-  const adjective = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)]
-  const word = ANIMALS[Math.floor(Math.random() * ANIMALS.length)]
-  return `${adjective}-${word}-${nanoid(5)}`
-}
 export default function Home() {
   const router = useRouter();
-  const [username, setUsername] = useState("");
-
-  useEffect(() => {
-    const main = () => {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        setUsername(stored);
-      }
-      else {
-        const getUser = generateUsername();
-        localStorage.setItem(STORAGE_KEY, getUser);
-        setUsername(getUser)
-      }
-    }
-    main();
-  }, [])
+  const { username } = useUsername();
   const [text, setText] = useState("CREATE SECURE ROOM")
   const { mutate: createRoom } = useMutation({
     mutationFn: async () => {

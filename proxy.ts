@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { redis } from "./lib/redis"
 import { nanoid } from "nanoid"
 
-export async function middleware(req: NextRequest) {
+export default async function middleware(req: NextRequest) {
     const pathname = req.nextUrl.pathname
 
     const roomId = pathname.split("/")[2]
