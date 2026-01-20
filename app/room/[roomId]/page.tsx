@@ -1,11 +1,12 @@
 'use client'
-
+import { format } from "date-fns"
 import { useUsername } from "@/hooks/use-username";
 import { client } from "@/lib/client";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Bomb, Send } from "lucide-react";
-import { useParams } from "next/navigation"
-import { useRef, useState } from "react";
+import { useParams, useRouter } from "next/navigation"
+import { useEffect, useRef, useState } from "react";
+import { useRealtime } from "@/lib/realtime-client";
 
 const formatTime = (time: number) => {
     const minutes = Math.floor(time / 60);
@@ -15,9 +16,75 @@ const formatTime = (time: number) => {
 };
 
 export default function Room() {
+    const router = useRouter();
+    const params = useParams()
+    const roomId = params.roomId as string
     const [input, setInput] = useState<string>("")
     const { username } = useUsername();
     const [copyStatus, setcopyStatus] = useState<string>("COPY")
+
+    const [time, setTime] = useState<number | null>(null);
+
+    const { mutate: destroyRoom } = useMutation({
+        mutationFn: async () => {
+            await client.room.delete(null, { query: { roomId } })
+            router.push("/?destroyed=true")
+        }
+    })
+    const { data: ttlData } = useQuery({
+        queryKey: ["ttl", roomId],
+        queryFn: async () => {
+            const res = await client.room.ttl.get({ query: { roomId } })
+            return res.data;
+        }
+    })
+    useEffect(() => {
+        if (ttlData?.ttl !== undefined) {
+            setTime(ttlData.ttl)
+        }
+    }, [ttlData])
+
+    useEffect(() => {
+        if (time == null || time < 0) {
+            return;
+        }
+        if (time == 0) {
+            router.push("/?destroyed=true")
+        }
+        const interval = setInterval(() => {
+            setTime((prev) => {
+                if (prev == null || prev < 0) {
+                    clearInterval(interval);
+                    return 0;
+                }
+                return prev - 1;
+            })
+        }, 1000)
+        return () => clearInterval(interval)
+    }, [time, router])
+
+
+
+    const { data: messages, refetch } = useQuery({
+        queryKey: ["messages", roomId],
+        queryFn: async () => {
+            const res = await client.messages.get({ query: { roomId } })
+            return res.data;
+        }
+    })
+
+    useRealtime({
+        channels: [roomId],
+        events: ["chat.message", "chat.destroy"],
+        onData: async ({ event, data }) => {
+            if (event === "chat.message") {
+                refetch();
+            }
+            if (event === "chat.destroy") {
+                router.push("/?destroyed=true")
+            }
+        }
+    })
     const copyLink = () => {
         const url = window.location.href;
         navigator.clipboard.writeText(url);
@@ -26,6 +93,9 @@ export default function Room() {
             setcopyStatus("COPY")
         }, 2000)
     }
+
+
+
     const { mutate: sendMessage, isPending } = useMutation({
         mutationFn: async ({ text }: { text: string }) => {
             await client.messages.post({
@@ -35,9 +105,7 @@ export default function Room() {
     })
     const inputRef = useRef<HTMLInputElement | undefined>(null)
 
-    const [time, setTime] = useState<number | null>(122);
-    const params = useParams()
-    const roomId = params.roomId as string
+
 
     return (
         <main className="flex flex-col h-screen max-h-screen overflow-hidden">
@@ -61,13 +129,33 @@ export default function Room() {
                         </span>
                     </div>
                 </div>
-                <button className="flex items-center gap-2 text-sm text-zinc-400 border border-zinc-100 px-2 py-1 rounded cursor-pointer hover:bg-red-800 hover:text-zinc-100 transition-colors">
+                <button onClick={() => destroyRoom()} className="flex items-center gap-2 text-sm text-zinc-400 border border-zinc-100 px-2 py-1 rounded cursor-pointer hover:bg-red-800 hover:text-zinc-100 transition-colors">
                     <Bomb className="w-4 h-4" />
                     DESTROY ROOM
                 </button>
             </header>
-            <div className="flex-1 overflow-y-auto space-y-4 scrollbar-thin">
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin">
+                {messages?.messages.length === 0 && (<div className="flex items-center justify-center h-full">
+                    <p className="text-zinc-600">No messages yet</p>
+                </div>)}
 
+                {messages?.messages.map((m) => (
+                    <div key={m.id} className="flex flex-col items-start">
+                        <div className="max-w-[80%] group">
+                            <div className="flex items-baseline gap-3 mb-1">
+                                <span className={`text-sm font-bold ${m.sender === username ? "text-green-500" : "text-blue-500"}`}>{m.sender}
+                                </span>
+                                <span className="text-[15px] text-zinc-600">
+                                    {format(m.timestamp, "HH:mm")}
+                                </span>
+
+                            </div>
+                            <p className="text-sm text-zinc-300 leading-relaxed break-all">
+                                {m.text}
+                            </p>
+                        </div>
+                    </div>
+                ))}
             </div>
             <div className="border-t border-zinc-800/50 p-4 bg-zinc-900/50 backdrop-blur-md">
                 <div className="flex gap-4">
@@ -78,8 +166,8 @@ export default function Room() {
                             onKeyDown={(e) => {
                                 if (e.key == "Enter") {
                                     sendMessage({ text: input })
-
                                     inputRef.current?.focus();
+                                    setInput("")
                                 }
                             }}
                             placeholder="Type message ..."
@@ -93,8 +181,8 @@ export default function Room() {
                         inputRef.current?.focus()
                         setInput("")
                     }}
-                    disabled={!input.trim() || isPending } 
-                    className="bg-zinc-800 text-zinc-400 px-6 text-md font-bold hover: text-zinc-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer rounded-lg flex items-center gap-2">
+                        disabled={!input.trim() || isPending}
+                        className="bg-zinc-800 text-zinc-400 px-6 text-md font-bold hover: text-zinc-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer rounded-lg flex items-center gap-2">
                         SEND<Send className="h-4 w-4" /></button>
                 </div>
             </div>
