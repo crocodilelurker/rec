@@ -22,13 +22,15 @@ const rooms = new Elysia({ prefix: '/room' })
         query: z.object({
             roomId: z.string()
         })
-    }).delete("/", async ({ auth }) => {
+    }).delete("/", async ({ auth, cookie }) => {
         await realtime.channel(auth.roomId).emit("chat.destroy", { isDestroyed: true })
         await Promise.all([
             redis.del(`meta:${auth.roomId}`),
             redis.del(`messages:${auth.roomId}`),
             redis.del(auth.roomId),
         ])
+        // Clear the auth cookie to prevent stale tokens
+        cookie["x-auth-token"].remove()
         return { success: true }
     }, {
         query: z.object({

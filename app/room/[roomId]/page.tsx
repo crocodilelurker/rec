@@ -81,6 +81,8 @@ export default function Room() {
                 refetch();
             }
             if (event === "chat.destroy") {
+                // Clear the auth cookie to prevent stale tokens on new rooms
+                document.cookie = "x-auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
                 router.push("/?destroyed=true")
             }
         }
